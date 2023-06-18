@@ -5,9 +5,6 @@
     <el-row>
       <el-button @click="onFmtJSON" circle>{ }</el-button>
     </el-row>
-<!--    <el-row>-->
-<!--      <el-input v-model="rules" type="textarea" rows="8"></el-input>-->
-<!--    </el-row>-->
     <v-ace-editor
       v-model:value="rules"
       lang="json"
