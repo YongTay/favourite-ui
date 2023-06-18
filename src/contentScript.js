@@ -1,3 +1,4 @@
+// 脚本初始化时执行次数
 let count = 50
 let timer = setInterval(() => {
   if(count <= 1) {
@@ -20,8 +21,13 @@ function createLogger(port) {
   }
 }
 let log = () => {}
+
+// 长久连接的通道
 let curPort
 
+/**
+ * 初始化
+ */
 function initCurrentStorage() {
   const origin = window.location.origin
   log('初始化空对象')
@@ -31,6 +37,10 @@ function initCurrentStorage() {
   })
 }
 
+/**
+ * 发送规则到面板
+ * @param str
+ */
 function postRule(str) {
   if(!str) {
     chrome.storage.sync.get(origin, res => {
@@ -48,6 +58,9 @@ function postRule(str) {
   }
 }
 
+/**
+ * 重置
+ */
 function resetRule() {
   const origin = window.location.origin
   log('重置: {}')
@@ -56,6 +69,10 @@ function resetRule() {
   })
 }
 
+/**
+ * 保存
+ * @param jsonStr
+ */
 function handleSave(jsonStr) {
   log(`保存数据：${jsonStr}`)
   const key = window.location.origin
@@ -66,14 +83,18 @@ function handleSave(jsonStr) {
   applyRule()
 }
 
+/**
+ * 规则应用
+ */
 function applyRule() {
   const origin = window.location.origin
   chrome.storage.sync.get(origin, res => {
-    const rule = res[origin]
-    // {"#id":{"display":"none"}}
-    for(const selector in rule) {
-      applyStyle(selector, rule[selector])
-    }
+    const rule = res[origin].children || []
+    rule.forEach(r => {
+      if(r.apply) {
+        applyStyle(r.selector, r.style)
+      }
+    })
   })
 }
 
@@ -96,12 +117,21 @@ function setStyle(ele, props) {
   }
 }
 
+/**
+ * 数据导出到面板
+ */
 function handleExport() {
   chrome.storage.sync.get((res) => {
-    console.log(JSON.stringify(res))
+    curPort.postMessage({
+      exportData: JSON.stringify(res)
+    })
   })
 }
 
+/**
+ * 数据导入
+ * @param jsonStr
+ */
 function handleImport(jsonStr) {
   const json = JSON.parse(jsonStr)
   for(const key in json) {
@@ -109,15 +139,17 @@ function handleImport(jsonStr) {
       [key]: json[key]
     })
   }
+  log(`导入成功`)
 }
 
-
+/**
+ * 消息处理
+ */
 chrome.runtime.onConnect.addListener(port => {
   if(port.name !== 'my-content') return
   log = createLogger(port)
   curPort = port
   const origin = window.location.origin
-  console.log(port)
   log('start...')
   applyRule()
   log('回传域名信息')
@@ -146,6 +178,9 @@ chrome.runtime.onConnect.addListener(port => {
       handleExport()
     } else if(msg.import) {
       handleImport(msg.import)
+    } else if(msg.fresh) {
+      postRule()
+      applyRule()
     }
   })
 })

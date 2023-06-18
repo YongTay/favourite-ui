@@ -37,9 +37,11 @@
         "storage",
         "declarativeNetRequest",
         "declarativeNetRequestWithHostAccess",
-        "declarativeNetRequestFeedback"
+        "declarativeNetRequestFeedback",
+        "webRequest",
+        "webRequestAuthProvider"
     ],
-    "host_permissions": ["https://*.csdn.net/*"],
+    "host_permissions": ["<all_urls>"],
     "minimum_chrome_version": "102",
     "omnibox": {
         "keyword": "api"
