@@ -233,3 +233,11 @@ chrome.runtime.onConnect.addListener(port => {
   })
 })
 
+const injectScript = (file, node) => {
+  const th = document.querySelector(node);
+  const s = document.createElement('script');
+  s.setAttribute('type', 'text/javascript');
+  s.setAttribute('src', file);
+  th.appendChild(s);
+};
+injectScript( chrome.runtime.getURL('ij.js'), 'body');

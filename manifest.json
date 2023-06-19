@@ -30,6 +30,7 @@
     "permissions": [
         "scripting",
         "activeTab",
+        "tabs",
         "storage",
         "declarativeNetRequest",
         "declarativeNetRequestWithHostAccess",
@@ -41,6 +42,9 @@
     "minimum_chrome_version": "102",
     "omnibox": {
         "keyword": "api"
-    }
-
+    },
+    "web_accessible_resources": [{
+        "matches": ["<all_urls>"],
+        "resources": ["ij.js"]
+    }]
 }
