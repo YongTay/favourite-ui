@@ -27,12 +27,13 @@
       </el-tree>
     </div>
     <el-row style="margin-top: 10px">
-      <el-input v-model="ioData" placeholder="导入导出的数据在这"/>
+      <el-input v-model.trim="ioData" placeholder="导入导出的数据在这" clearable/>
     </el-row>
     <el-row style="margin-top: 10px">
+      <el-button @click="onSync" size="small">同步在线配置</el-button>
       <el-button @click="onReset" size="small">重置</el-button>
       <el-button @click="onExport" size="small">导出</el-button>
-      <el-button @click="onImport" size="small">导入</el-button>
+      <el-button @click="onImport" size="small" :disabled="allowImport">导入</el-button>
     </el-row>
 
     <el-row v-if="false">
@@ -47,6 +48,7 @@ import { Delete, Plus, RefreshRight } from '@element-plus/icons-vue'
 import AddItem from '@/components/AddItem.vue'
 
 import {computed, onMounted, reactive, ref, watch} from 'vue'
+import {ElMessage, ElMessageBox} from "element-plus";
 
 const origin = ref('http://127.0.0.1')
 const history = ref('')
@@ -66,16 +68,28 @@ watch(origin, v => {
   data.selector = v
 })
 const treeData = computed(() => [data])
+const allowImport = computed(() => ioData.value.length === 0)
 const defaultChecked = computed(() => data.children.filter(o => o.apply).map(o => o.selector))
 const onRemove = () => {
   let checked = refTree.value.getCheckedNodes()
-  checked.forEach(item => {
-    const delIndex = data.children.findIndex(o => item.selector === o.selector)
-    if(delIndex > -1) {
-      data.children.splice(delIndex, 1)
+  ElMessageBox.confirm(
+    `此操作不可逆，确认删除所选${checked.length}条配置信息？`,
+    'warning',
+    {
+      confirmButtonText: '清除',
+      cancelButtonText: '取消',
+      type: 'warning',
     }
+  ).then(() => {
+    checked.forEach(item => {
+      const delIndex = data.children.findIndex(o => item.selector === o.selector)
+      if(delIndex > -1) {
+        data.children.splice(delIndex, 1)
+      }
+    })
+    onSave()
   })
-  onSave()
+
 }
 
 const onCheckChange = () => {
@@ -134,8 +148,18 @@ const onSave = () => {
 }
 const onReset = () => {
   if(import.meta.env.MODE === 'development') return
-  port.postMessage({
-    reset: true
+  ElMessageBox.confirm(
+    '此操作不可逆，确认删除所有配置信息？',
+    'warning',
+    {
+      confirmButtonText: '清除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    port.postMessage({
+      reset: true
+    })
   })
 }
 
@@ -148,8 +172,27 @@ const onExport = () => {
 
 const onImport = () => {
   if(import.meta.env.MODE === 'development') return
+
   port.postMessage({
     import: ioData.value
+  })
+  setTimeout(() => {
+    ioData.value = ''
+  })
+}
+
+const openMessage = (msg, type) => {
+  ElMessage({
+    showClose: true,
+    message: msg,
+    type: type
+  })
+}
+
+const onSync = () => {
+  if(import.meta.env.MODE === 'development') return
+  port.postMessage({
+    syncRule: true
   })
 }
 
@@ -169,6 +212,12 @@ onMounted(() => {
         Object.assign(data, JSON.parse(msg.rules))
       } else if(msg.exportData) {
         ioData.value = msg.exportData
+      } else if(msg.success) {
+        openMessage(msg.success, 'success')
+      } else if(msg.info) {
+        openMessage(msg.info)
+      } else if(msg.error) {
+        openMessage(msg.error, 'error')
       }
     })
   })

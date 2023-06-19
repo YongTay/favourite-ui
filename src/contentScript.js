@@ -23,7 +23,11 @@ function createLogger(port) {
 let log = () => {}
 
 // 长久连接的通道
-let curPort
+let curPort // 和界面通信
+
+// 和background通信
+const backgroundPort = chrome.runtime.connect({name: 'my-background'})
+backgroundPort.postMessage({ping: 'ping'})
 
 /**
  * 初始化
@@ -62,11 +66,12 @@ function postRule(str) {
  * 重置
  */
 function resetRule() {
-  const origin = window.location.origin
+  // const origin = window.location.origin
   log('重置: {}')
-  chrome.storage.sync.set({
-    [origin]: {}
-  })
+  chrome.storage.sync.clear()
+  // chrome.storage.sync.set({
+  //   [origin]: {}
+  // })
 }
 
 /**
@@ -139,7 +144,41 @@ function handleImport(jsonStr) {
       [key]: json[key]
     })
   }
+  postRule()
+  applyRule()
   log(`导入成功`)
+  successMessage('导入成功')
+}
+
+/**
+ * 同步网络配置
+ */
+function handleSyncRule () {
+  backgroundPort.postMessage({webRule: true})
+  backgroundPort.onMessage.addListener(msg => {
+    handleImport(msg.data)
+  })
+}
+
+function infoMessage(msg) {
+  if(!curPort) return
+  curPort.postMessage({
+    info: msg
+  })
+}
+
+function successMessage(msg) {
+  if(!curPort) return
+  curPort.postMessage({
+    success: msg
+  })
+}
+
+function errorMessage(msg) {
+  if(!curPort) return
+  curPort.postMessage({
+    error: msg
+  })
 }
 
 /**
@@ -173,7 +212,6 @@ chrome.runtime.onConnect.addListener(port => {
       handleSave(msg.save)
     } else if(msg.reset) {
       resetRule()
-      postRule()
     } else if(msg.export) {
       handleExport()
     } else if(msg.import) {
@@ -181,6 +219,8 @@ chrome.runtime.onConnect.addListener(port => {
     } else if(msg.fresh) {
       postRule()
       applyRule()
+    } else if(msg.syncRule) {
+      handleSyncRule(msg.syncRule)
     }
   })
 })

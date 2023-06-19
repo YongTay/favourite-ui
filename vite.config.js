@@ -29,6 +29,7 @@ export default defineConfig({
         entryFileNames: '[name].js',
         dir: 'dist'
       }
-    }
+    },
+    chunkSizeWarningLimit: '5000'
   }
 })
