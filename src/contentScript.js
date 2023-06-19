@@ -102,6 +102,7 @@ function handleSave(jsonStr) {
 function applyRule() {
   const origin = window.location.origin
   chrome.storage.sync.get(origin, res => {
+    if(!res[origin] || !res[origin].children) return
     const rule = res[origin].children || []
     rule.forEach(r => {
       if(r.apply) {
