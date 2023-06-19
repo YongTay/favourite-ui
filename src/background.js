@@ -1,5 +1,3 @@
-
-
 /**
  * 获取在线配置
  * @param port
@@ -10,6 +8,11 @@ function postWebRule(port) {
     .then(res => {
       port.postMessage({
         data: res
+      })
+    })
+    .catch(() => {
+      port.postMessage({
+        error: '配置同步失败'
       })
     })
 }

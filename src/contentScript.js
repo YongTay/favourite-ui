@@ -28,7 +28,15 @@ let curPort // 和界面通信
 // 和background通信
 const backgroundPort = chrome.runtime.connect({name: 'my-background'})
 backgroundPort.postMessage({ping: 'ping'})
-
+backgroundPort.onMessage.addListener(msg => {
+  if(msg.error) {
+    errorMessage(msg.error)
+  } else if(msg.info) {
+    infoMessage(msg.info)
+  } else if(msg.success) {
+    successMessage(msg.success)
+  }
+})
 /**
  * 初始化
  */
